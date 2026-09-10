@@ -2,7 +2,7 @@
 
 client_id = "528b4c2ec9b3ebdfc8cb6fce7d36ca67"
 name = "GMPauto"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://samplemakeer.onrender.com"
 embedded = true
 
 [access_scopes]
@@ -10,7 +10,7 @@ embedded = true
 scopes = "read_products,read_orders,read_inventory,write_discounts"
 
 [app_proxy]
-url = "https://REPLACE_WITH_APP_URL/proxy"
+url = "https://samplemakeer.onrender.com/proxy"
 prefix = "apps"
 subpath = "gwp"
 
@@ -50,7 +50,7 @@ api_version = "2026-10"
   compliance_topics = [ "shop/redact" ]
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = [ "https://samplemakeer.onrender.com/auth/callback" ]
 
 [build]
 include_config_on_deploy = true
