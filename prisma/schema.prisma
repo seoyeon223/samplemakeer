@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+// A GWP (Gift-With-Purchase) promotion: a condition that, when met by a cart,
+// makes one or more Gift records eligible to be auto-added as a free line item.
+model Promotion {
+  id             String   @id @default(cuid())
+  shop           String
+  name           String
+  active         Boolean  @default(true)
+  // MIN_AMOUNT: conditionValue is a decimal string (cart subtotal threshold, shop currency)
+  // SPECIFIC_PRODUCT: conditionValue is a Shopify product GID that must be in the cart
+  conditionType  String
+  conditionValue String
+  // SINGLE: only one gift ever. RANDOM: pick pseudo-randomly per cart. ROTATING: cycle through gifts, advancing once per completed order.
+  assignmentMode String   @default("SINGLE")
+  // Next gift index to hand out for ROTATING mode; advanced by the orders webhook.
+  rotationIndex  Int      @default(0)
+  priority       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  gifts    Gift[]
+  orderLogs GwpOrderLog[]
+
+  @@index([shop])
+  @@index([shop, active])
+}
+
+// A sample/gift product+variant offered under a promotion, with a locally tracked
+// stock count mirrored from Shopify inventory via the inventory_levels/update webhook.
+model Gift {
+  id              String   @id @default(cuid())
+  shop            String
+  promotionId     String
+  productId       String
+  variantId       String
+  inventoryItemId String
+  title           String
+  imageUrl        String?
+  stock           Int      @default(0)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([shop])
+  @@index([promotionId])
+  @@index([inventoryItemId])
+}
+
+// One row per order line that received a free gift, used for the "GWP applied order ratio" metric.
+model GwpOrderLog {
+  id          String   @id @default(cuid())
+  shop        String
+  orderId     String
+  promotionId String
+  giftId      String
+  variantId   String
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, promotionId, variantId])
+  @@index([shop])
+  @@index([shop, createdAt])
+}
