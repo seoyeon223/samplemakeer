@@ -19,7 +19,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Gates every /app/* page behind an active (or trialing) subscription.
   // A shop without one is redirected to Shopify's hosted charge confirmation
   // screen and lands back here once approved.
-  const isTest = process.env.NODE_ENV !== "production";
+  //
+  // Controlled by its own env var (not NODE_ENV) so hosting providers that
+  // set NODE_ENV=production for unrelated reasons (build optimizations, etc.)
+  // don't silently switch this to real billing. Defaults to test mode —
+  // set BILLING_TEST_MODE=false only once you're ready to accept real charges
+  // from live merchant stores (development stores can never be charged for
+  // real regardless of this flag).
+  const isTest = process.env.BILLING_TEST_MODE !== "false";
   await billing.require({
     plans: [MONTHLY_PLAN],
     isTest,
