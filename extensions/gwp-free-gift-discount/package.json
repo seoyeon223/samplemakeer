@@ -24,7 +24,7 @@
     "@shopify/shopify_function": "~1.0.0"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/cli": "^7.2.0",
     "@graphql-codegen/typescript": "^4.0.0",
     "@graphql-codegen/typescript-operations": "^4.5.0"
   }
