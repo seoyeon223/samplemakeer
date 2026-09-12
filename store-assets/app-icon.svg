@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <rect width="1200" height="1200" fill="#008060"/>
+
+  <!-- Gift box icon, centered on (600,600), total footprint ~600x480 (within the 900px safe max) -->
+  <g fill="#ffffff">
+    <!-- box body -->
+    <rect x="330" y="590" width="540" height="330" rx="22"/>
+
+    <!-- lid -->
+    <rect x="290" y="500" width="620" height="110" rx="20"/>
+
+    <!-- bow: two clean loops + knot -->
+    <circle cx="530" cy="440" r="72"/>
+    <circle cx="670" cy="440" r="72"/>
+  </g>
+
+  <!-- ribbon cutouts (vertical + knot + lid gap), in the background green -->
+  <g fill="#008060">
+    <rect x="570" y="500" width="60" height="420"/>
+    <rect x="290" y="530" width="620" height="50"/>
+    <circle cx="600" cy="440" r="34"/>
+  </g>
+</svg>

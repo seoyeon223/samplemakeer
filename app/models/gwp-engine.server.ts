@@ -1,5 +1,7 @@
 import db from "../db.server";
-import { CONDITION_TYPES } from "./promotion.server";
+import { CONDITION_TYPES, getGwpOrderCount } from "./promotion.server";
+import { getShopPlan } from "./shop.server";
+import { FREE_PLAN, FREE_PLAN_MONTHLY_ORDER_LIMIT } from "../billing";
 
 export type CartLineInput = {
   productId: string; // gid://shopify/Product/...
@@ -55,6 +57,16 @@ function isConditionMet(
 export async function evaluateEligibleGifts(
   input: EvaluateInput,
 ): Promise<EligibleGift[]> {
+  const plan = await getShopPlan(input.shop);
+  if (plan === FREE_PLAN) {
+    const ordersThisMonth = await getGwpOrderCount(input.shop, 30);
+    if (ordersThisMonth >= FREE_PLAN_MONTHLY_ORDER_LIMIT) {
+      // Free plan cap hit — stop offering new gifts until the shop upgrades
+      // or the rolling 30-day window rolls a completed order off the count.
+      return [];
+    }
+  }
+
   const promotions = await db.promotion.findMany({
     where: { shop: input.shop, active: true },
     // stock > 0 is enforced here (not just `active`) so a merchant manually

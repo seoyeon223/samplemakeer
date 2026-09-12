@@ -9,29 +9,25 @@ import { authenticate } from "../shopify.server";
 import { detectLocale } from "../i18n/detectLocale.server";
 import { LocaleProvider, useTranslations } from "../i18n/LocaleContext";
 import { LanguageToggle } from "../i18n/LanguageToggle";
-import { MONTHLY_PLAN } from "../billing.server";
+import { syncShopPlan } from "../models/shop.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
 
-  // Gates every /app/* page behind an active (or trialing) subscription.
-  // A shop without one is redirected to Shopify's hosted charge confirmation
-  // screen and lands back here once approved.
+  // Plan selection itself happens on Shopify's own Managed Pricing page
+  // during install — by the time this loader runs the shop already has a
+  // plan (Free or Pro). We just read which one, cache it, and let route-level
+  // code (dashboard badge, storefront order-limit check) use it from there.
   //
-  // Controlled by its own env var (not NODE_ENV) so hosting providers that
-  // set NODE_ENV=production for unrelated reasons (build optimizations, etc.)
-  // don't silently switch this to real billing. Defaults to test mode —
-  // set BILLING_TEST_MODE=false only once you're ready to accept real charges
-  // from live merchant stores (development stores can never be charged for
-  // real regardless of this flag).
+  // isTest must stay true for development stores (which can only ever
+  // subscribe in test mode) to be recognized as having picked a real plan.
+  // Controlled by its own env var rather than NODE_ENV — see the comment
+  // history on this file for why that matters once this app is live.
   const isTest = process.env.BILLING_TEST_MODE !== "false";
-  await billing.require({
-    plans: [MONTHLY_PLAN],
-    isTest,
-    onFailure: async () => billing.request({ plan: MONTHLY_PLAN, isTest }),
-  });
+  const { appSubscriptions } = await billing.check({ isTest });
+  await syncShopPlan(session.shop, appSubscriptions);
 
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",

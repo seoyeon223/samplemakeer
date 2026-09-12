@@ -38,6 +38,11 @@ export const translations = {
       step3: '3. 테마 편집기에서 "앱 임베드"에 GWP 위젯을 켜고, 자동 할인 (100% 상품 할인)이 활성화되어 있는지 확인하세요.',
       earlyStageNotice:
         "현재 무료 호스팅으로 서비스 초기 단계를 운영 중입니다. 20분 이상 접속이 없으면 다음 접속 시 로딩에 최대 1분 정도 걸릴 수 있어요. 이용자가 늘어나는 대로 빠르게 유료 호스팅으로 전환할 예정입니다.",
+      planUsage: (used: number, limit: number) => `이번 달 사용량 ${used} / ${limit}건`,
+      planLimitReached:
+        "이번 달 무료 플랜 한도(20건)에 도달해 샘플 자동 증정이 잠시 중단되었습니다. Shopify 관리자의 앱 결제 화면에서 Pro 플랜으로 업그레이드하면 바로 재개됩니다.",
+      planLimitApproaching: (used: number, limit: number) =>
+        `무료 플랜 한도에 가까워지고 있어요 (${used} / ${limit}건). 한도를 넘으면 새 주문에 샘플이 자동으로 추가되지 않습니다.`,
     },
     conditionLabel: {
       MIN_AMOUNT: "주문 금액 이상",
@@ -139,6 +144,11 @@ export const translations = {
       step3: '3. In the theme editor, enable the GWP widget under "App embeds" and confirm the automatic discount (100% off the gift product) is active.',
       earlyStageNotice:
         "We're currently running on free-tier hosting during early access. If the app hasn't been opened in the last 20 minutes, the next load may take up to a minute. We'll move to paid hosting as usage grows.",
+      planUsage: (used: number, limit: number) => `${used} / ${limit} orders used this month`,
+      planLimitReached:
+        "You've hit this month's Free plan limit (20 orders), so samples have stopped being added automatically. Upgrade to Pro from the app's billing screen in Shopify admin to resume right away.",
+      planLimitApproaching: (used: number, limit: number) =>
+        `You're approaching the Free plan limit (${used} / ${limit}). Once you go over, new orders won't get a gift added automatically.`,
     },
     conditionLabel: {
       MIN_AMOUNT: "Minimum order amount",

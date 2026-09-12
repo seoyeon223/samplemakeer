@@ -82,6 +82,16 @@ model Gift {
   @@index([inventoryItemId])
 }
 
+// Caches the shop's current Shopify Managed Pricing plan, synced from
+// billing.check() on each admin page load. Read from here (not the Billing
+// API directly) by the storefront proxy so enforcing the Free plan's order
+// limit doesn't require a Shopify API call on every cart evaluation.
+model Shop {
+  shop      String   @id
+  plan      String   @default("Free")
+  updatedAt DateTime @updatedAt
+}
+
 // One row per order line that received a free gift, used for the "GWP applied order ratio" metric.
 model GwpOrderLog {
   id          String   @id @default(cuid())

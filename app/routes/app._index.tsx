@@ -15,15 +15,18 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { getGwpOrderCount } from "../models/promotion.server";
+import { getShopPlan } from "../models/shop.server";
+import { FREE_PLAN, FREE_PLAN_MONTHLY_ORDER_LIMIT } from "../billing";
 import { useTranslations } from "../i18n/LocaleContext";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  const [activePromotionCount, gwpOrders30d] = await Promise.all([
+  const [activePromotionCount, gwpOrders30d, plan] = await Promise.all([
     db.promotion.count({ where: { shop, active: true } }),
     getGwpOrderCount(shop, 30),
+    getShopPlan(shop),
   ]);
 
   let totalOrders30d: number | null = null;
@@ -49,18 +52,30 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ? Math.round((gwpOrders30d / totalOrders30d) * 1000) / 10
       : null;
 
-  return { activePromotionCount, gwpOrders30d, totalOrders30d, gwpRatio };
+  return { activePromotionCount, gwpOrders30d, totalOrders30d, gwpRatio, plan };
 };
 
 export default function Index() {
-  const { activePromotionCount, gwpOrders30d, totalOrders30d, gwpRatio } =
+  const { activePromotionCount, gwpOrders30d, totalOrders30d, gwpRatio, plan } =
     useLoaderData<typeof loader>();
   const { t } = useTranslations();
+  const isFreePlan = plan === FREE_PLAN;
+  const orderLimitReached = isFreePlan && gwpOrders30d >= FREE_PLAN_MONTHLY_ORDER_LIMIT;
+  const orderLimitApproaching =
+    isFreePlan && !orderLimitReached && gwpOrders30d >= FREE_PLAN_MONTHLY_ORDER_LIMIT * 0.8;
 
   return (
-    <Page>
+    <Page
+      titleMetadata={<Badge tone={isFreePlan ? undefined : "success"}>{plan}</Badge>}
+    >
       <TitleBar title={t.dashboard.title} />
       <BlockStack gap="500">
+        {orderLimitReached && <Banner tone="critical">{t.dashboard.planLimitReached}</Banner>}
+        {orderLimitApproaching && (
+          <Banner tone="warning">
+            {t.dashboard.planLimitApproaching(gwpOrders30d, FREE_PLAN_MONTHLY_ORDER_LIMIT)}
+          </Banner>
+        )}
         <Banner tone="info">{t.dashboard.earlyStageNotice}</Banner>
         <Layout>
           <Layout.Section>
@@ -99,6 +114,13 @@ export default function Index() {
                       </Text>
                     )}
                   </BlockStack>
+                  {isFreePlan && (
+                    <BlockStack gap="100">
+                      <Text as="span" variant="bodySm" tone="subdued">
+                        {t.dashboard.planUsage(gwpOrders30d, FREE_PLAN_MONTHLY_ORDER_LIMIT)}
+                      </Text>
+                    </BlockStack>
+                  )}
                 </InlineStack>
               </BlockStack>
             </Card>
