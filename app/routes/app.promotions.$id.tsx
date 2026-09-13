@@ -25,14 +25,20 @@ import { getPromotion, updatePromotion } from "../models/promotion.server";
 import { addGift, removeGift, setGiftActive } from "../models/gift.server";
 import db from "../db.server";
 import { useTranslations } from "../i18n/LocaleContext";
+import { getCurrencySymbol } from "../currency";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const promotion = await getPromotion(session.shop, params.id!);
   if (!promotion) {
     throw new Response("Not found", { status: 404 });
   }
-  return { promotion };
+  const response = await admin.graphql(`#graphql
+    query ShopCurrency {
+      shop { currencyCode }
+    }`);
+  const json = await response.json();
+  return { promotion, currencyCode: json.data?.shop?.currencyCode as string | undefined };
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -129,11 +135,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function EditPromotion() {
-  const { promotion } = useLoaderData<typeof loader>();
+  const { promotion, currencyCode } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const { t } = useTranslations();
+  const currencySymbol = getCurrencySymbol(currencyCode);
 
   const [name, setName] = useState(promotion.name);
   const [conditionType, setConditionType] = useState(promotion.conditionType);
@@ -215,7 +222,7 @@ export default function EditPromotion() {
               value={conditionValue}
               onChange={setConditionValue}
               autoComplete="off"
-              prefix={conditionType === "MIN_AMOUNT" ? "₩" : undefined}
+              prefix={conditionType === "MIN_AMOUNT" ? currencySymbol : undefined}
             />
             <Select
               label={t.promotionForm.assignmentLabel}

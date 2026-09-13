@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useActionData, useNavigate, useSubmit } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import {
   Page,
   Card,
@@ -16,10 +16,16 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { createPromotion } from "../models/promotion.server";
 import { useTranslations } from "../i18n/LocaleContext";
+import { getCurrencySymbol } from "../currency";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const { admin } = await authenticate.admin(request);
+  const response = await admin.graphql(`#graphql
+    query ShopCurrency {
+      shop { currencyCode }
+    }`);
+  const json = await response.json();
+  return { currencyCode: json.data?.shop?.currencyCode as string | undefined };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -46,10 +52,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function NewPromotion() {
+  const { currencyCode } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const submit = useSubmit();
   const actionData = useActionData<typeof action>();
   const { t } = useTranslations();
+  const currencySymbol = getCurrencySymbol(currencyCode);
 
   const [name, setName] = useState("");
   const [conditionType, setConditionType] = useState("MIN_AMOUNT");
@@ -98,7 +106,7 @@ export default function NewPromotion() {
                 value={conditionValue}
                 onChange={setConditionValue}
                 autoComplete="off"
-                prefix="₩"
+                prefix={currencySymbol}
               />
             ) : (
               <BlockStack gap="100">
